@@ -1,27 +1,24 @@
-class Category {
+class Member {
   final String id;
   final String name;
-  final String icon;
-  final String color;
-  final String userId;
+  final String email;
+  final String? profileImage;
   final DateTime createdAt;
 
-  Category({
+  Member({
     required this.id,
     required this.name,
-    required this.icon,
-    required this.color,
-    required this.userId,
+    required this.email,
+    this.profileImage,
     required this.createdAt,
   });
 
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
+  factory Member.fromJson(Map<String, dynamic> json) {
+    return Member(
       id: json['id'],
       name: json['name'],
-      icon: json['icon'],
-      color: json['color'],
-      userId: json['user_id'],
+      email: json['email'],
+      profileImage: json['profile_image'],
       createdAt: DateTime.parse(json['created_at']),
     );
   }
@@ -30,9 +27,8 @@ class Category {
     return {
       'id': id,
       'name': name,
-      'icon': icon,
-      'color': color,
-      'user_id': userId,
+      'email': email,
+      'profile_image': profileImage,
       'created_at': createdAt.toIso8601String(),
     };
   }
