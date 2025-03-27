@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
-import '../viewmodels/expense_viewmodel.dart';
-import '../viewmodels/category_viewmodel.dart';
 import '../widgets/expense_filter.dart';
-import '../screens/expense_detail_screen.dart';
 import '../screens/add_expense_screen.dart';
+import '../screens/expense_detail_screen.dart';
+import '../providers/expense_provider.dart';
+import '../providers/category_provider.dart';
 
 class ExpenseListScreen extends ConsumerStatefulWidget {
   const ExpenseListScreen({Key? key}) : super(key: key);
@@ -18,10 +18,10 @@ class ExpenseListScreen extends ConsumerStatefulWidget {
 }
 
 class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
-  DateTime _startDate = DateTime.now().subtract(Duration(days: 30));
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
   String? _selectedCategoryId;
-  
+
   // 통화 포맷터
   final currencyFormatter = NumberFormat.currency(
     locale: 'ko_KR',
@@ -32,29 +32,31 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
   @override
   Widget build(BuildContext context) {
     // 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-    final userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
-    
+    const userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
+
     // 날짜 범위로 필터링된 지출 목록
     final filteredExpenses = ref.watch(dateRangeExpensesProvider((
       start: _startDate,
       end: _endDate,
       userId: userId,
     )));
-    
+
     // 카테고리별 추가 필터링
     final finalExpenses = _selectedCategoryId != null
-        ? filteredExpenses.where((expense) => expense.categoryId == _selectedCategoryId).toList()
+        ? filteredExpenses
+            .where((expense) => expense.categoryId == _selectedCategoryId)
+            .toList()
         : filteredExpenses;
-    
+
     // 카테고리 정보
-    final categoriesState = ref.watch(categoryProvider);
-    
+    final categoriesState = ref.watch(categoryNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('지출 목록'),
+        title: const Text('지출 목록'),
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterDialog(context),
           ),
         ],
@@ -65,8 +67,9 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
           _buildDateRangeIndicator(),
           Expanded(
             child: categoriesState.when(
-              data: (categories) => _buildExpenseList(finalExpenses, categories),
-              loading: () => Center(child: CircularProgressIndicator()),
+              data: (categories) =>
+                  _buildExpenseList(finalExpenses, categories),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
                 child: Text('카테고리 정보를 불러오는 중 오류가 발생했습니다: $error'),
               ),
@@ -76,40 +79,40 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddExpense(context),
-        child: Icon(Icons.add),
         tooltip: '지출 추가',
+        child: const Icon(Icons.add),
       ),
     );
   }
 
   Widget _buildSummaryCard(List<Expense> expenses) {
-    final totalAmount = expenses.fold<double>(
-      0, (sum, expense) => sum + expense.amount);
-    
+    final totalAmount =
+        expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
+
     return Card(
-      margin: EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
       elevation: 4,
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
+            const Text(
               '총 지출 금액',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               currencyFormatter.format(totalAmount),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.red,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               '${DateFormat('yyyy년 MM월 dd일').format(_startDate)} ~ ${DateFormat('yyyy년 MM월 dd일').format(_endDate)}',
               style: TextStyle(
@@ -125,28 +128,43 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
 
   Widget _buildDateRangeIndicator() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (_selectedCategoryId != null)
             Chip(
               label: Text(
-                ref.read(categoryByIdProvider(_selectedCategoryId!))?.name ?? '선택된 카테고리',
-                style: TextStyle(color: Colors.white),
+                ref.watch(categoryNotifierProvider).whenOrNull(
+                          data: (categories) => categories
+                              .firstWhere(
+                                (c) => c.id == _selectedCategoryId,
+                                orElse: () => Category(
+                                  id: 'unknown',
+                                  name: '기타',
+                                  icon: 'more_horiz',
+                                  color: '#757575',
+                                  userId: 'default',
+                                  createdAt: DateTime.now(),
+                                ),
+                              )
+                              .name,
+                        ) ??
+                    '선택된 카테고리',
+                style: const TextStyle(color: Colors.white),
               ),
               backgroundColor: Colors.blue,
-              deleteIcon: Icon(Icons.clear, color: Colors.white),
+              deleteIcon: const Icon(Icons.clear, color: Colors.white),
               onDeleted: () {
                 setState(() {
                   _selectedCategoryId = null;
                 });
               },
             ),
-          Spacer(),
+          const Spacer(),
           TextButton.icon(
-            icon: Icon(Icons.date_range),
-            label: Text('기간 변경'),
+            icon: const Icon(Icons.date_range),
+            label: const Text('기간 변경'),
             onPressed: () => _selectDateRange(context),
           ),
         ],
@@ -161,7 +179,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               '지출 내역이 없습니다',
               style: TextStyle(
@@ -169,7 +187,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
                 color: Colors.grey[600],
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               '새로운 지출을 추가해보세요',
               style: TextStyle(
@@ -202,29 +220,29 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
         final dateKey = sortedDates[index];
         final dayExpenses = groupedExpenses[dateKey]!;
         final date = DateFormat('yyyy-MM-dd').parse(dateKey);
-        
+
         // 날짜별 총 지출액 계산
-        final dailyTotal = dayExpenses.fold<double>(
-          0, (sum, expense) => sum + expense.amount);
+        final dailyTotal =
+            dayExpenses.fold<double>(0, (sum, expense) => sum + expense.amount);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     DateFormat('yyyy년 MM월 dd일 (E)', 'ko_KR').format(date),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                   Text(
                     currencyFormatter.format(dailyTotal),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.red,
                     ),
@@ -232,7 +250,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
                 ],
               ),
             ),
-            Divider(height: 1),
+            const Divider(height: 1),
             ...dayExpenses.map((expense) {
               // 카테고리 찾기
               final category = categories.firstWhere(
@@ -246,7 +264,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
                   createdAt: DateTime.now(),
                 ),
               );
-              
+
               return ExpenseListItem(
                 expense: expense,
                 category: category,
@@ -264,10 +282,10 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddExpenseScreen(),
+        builder: (context) => const AddExpenseScreen(),
       ),
     );
-    
+
     if (result == true) {
       // 지출이 추가되면 목록 새로고침
       ref.read(expenseProvider.notifier).loadExpenses();
@@ -281,7 +299,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
         builder: (context) => ExpenseDetailScreen(expenseId: expenseId),
       ),
     );
-    
+
     if (result == true) {
       // 지출이 수정되거나 삭제되면 목록 새로고침
       ref.read(expenseProvider.notifier).loadExpenses();
@@ -296,11 +314,11 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
         end: _endDate,
       ),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: Colors.blue,
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -311,7 +329,7 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         _startDate = picked.start;
@@ -361,8 +379,9 @@ class ExpenseListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 카테고리 색상
-    final categoryColor = Color(int.parse(category.color.replaceFirst('#', '0xFF')));
-    
+    final categoryColor =
+        Color(int.parse(category.color.replaceFirst('#', '0xFF')));
+
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: categoryColor,
@@ -377,7 +396,7 @@ class ExpenseListItem extends StatelessWidget {
       ),
       title: Text(
         expense.description,
-        style: TextStyle(
+        style: const TextStyle(
           fontWeight: FontWeight.w500,
         ),
       ),

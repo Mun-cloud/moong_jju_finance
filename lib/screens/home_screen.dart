@@ -6,12 +6,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/expense.dart';
 import '../models/income.dart';
 import '../models/category.dart';
-import '../viewmodels/expense_viewmodel.dart';
-import '../viewmodels/income_viewmodel.dart';
-import '../viewmodels/category_viewmodel.dart';
 import '../screens/expense_list_screen.dart';
 import '../screens/add_expense_screen.dart';
-import '../screens/add_income_screen.dart'; // 이 파일은 별도로 구현 필요
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -23,10 +19,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   // 현재 선택된 월
   late DateTime _selectedMonth;
-  
+
   // 화면 탭 인덱스
   int _currentIndex = 0;
-  
+
   // 통화 포맷터
   final currencyFormatter = NumberFormat.currency(
     locale: 'ko_KR',
@@ -41,40 +37,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // 월 시작일
-  DateTime get _monthStart => DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-  
+  DateTime get _monthStart =>
+      DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+
   // 월 종료일
-  DateTime get _monthEnd => DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+  DateTime get _monthEnd =>
+      DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
 
   @override
   Widget build(BuildContext context) {
     // 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-    final userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
-    
+    const userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
+
     // 현재 월의 지출 목록 가져오기
     final currentMonthExpenses = ref.watch(dateRangeExpensesProvider((
       start: _monthStart,
       end: _monthEnd,
       userId: userId,
     )));
-    
+
     // 현재 월의 수입 목록 가져오기
     final currentMonthIncomes = ref.watch(dateRangeIncomesProvider((
       start: _monthStart,
       end: _monthEnd,
       userId: userId,
     )));
-    
+
     // 카테고리 정보 가져오기
     final categoriesState = ref.watch(categoryProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: _buildMonthSelector(),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.account_circle),
+            icon: const Icon(Icons.account_circle),
             onPressed: () {
               // 프로필 화면으로 이동
             },
@@ -90,18 +88,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               await ref.read(incomeProvider.notifier).loadIncomes();
             },
             child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFinancialSummary(currentMonthExpenses, currentMonthIncomes),
-                    SizedBox(height: 20),
-                    _buildExpenseIncomeChart(currentMonthExpenses, currentMonthIncomes),
-                    SizedBox(height: 20),
-                    _buildCategoryExpenseChart(currentMonthExpenses, categories),
-                    SizedBox(height: 20),
+                    _buildFinancialSummary(
+                        currentMonthExpenses, currentMonthIncomes),
+                    const SizedBox(height: 20),
+                    _buildExpenseIncomeChart(
+                        currentMonthExpenses, currentMonthIncomes),
+                    const SizedBox(height: 20),
+                    _buildCategoryExpenseChart(
+                        currentMonthExpenses, categories),
+                    const SizedBox(height: 20),
                     _buildRecentTransactions(currentMonthExpenses, categories),
                   ],
                 ),
@@ -109,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         },
-        loading: () => Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text('데이터를 불러오는 중 오류가 발생했습니다: $error'),
         ),
@@ -120,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
-          
+
           // 탭에 따른 화면 이동
           switch (index) {
             case 0:
@@ -130,7 +131,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // 지출 목록 화면으로 이동
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ExpenseListScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const ExpenseListScreen()),
               );
               break;
             case 2:
@@ -141,7 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               break;
           }
         },
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: '지출 목록'),
           BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: '통계'),
@@ -150,8 +152,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTransactionDialog(context),
-        child: Icon(Icons.add),
         tooltip: '추가하기',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -164,35 +166,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Text(
             DateFormat('yyyy년 MM월').format(_selectedMonth),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          Icon(Icons.arrow_drop_down),
+          const Icon(Icons.arrow_drop_down),
         ],
       ),
     );
   }
 
   Widget _buildFinancialSummary(List<Expense> expenses, List<Income> incomes) {
-    final totalExpense = expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
-    final totalIncome = incomes.fold<double>(0, (sum, income) => sum + income.amount);
+    final totalExpense =
+        expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
+    final totalIncome =
+        incomes.fold<double>(0, (sum, income) => sum + income.amount);
     final balance = totalIncome - totalExpense;
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               '이번 달 재정 요약',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -236,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
@@ -244,7 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: Colors.grey[600],
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           currencyFormatter.format(amount),
           style: TextStyle(
@@ -257,57 +261,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildExpenseIncomeChart(List<Expense> expenses, List<Income> incomes) {
+  Widget _buildExpenseIncomeChart(
+      List<Expense> expenses, List<Income> incomes) {
     // 일별 데이터 준비
     final Map<int, double> dailyExpenses = {};
     final Map<int, double> dailyIncomes = {};
-    
+
     // 이번 달의 일수
     final daysInMonth = _monthEnd.day;
-    
+
     // 초기화
     for (int i = 1; i <= daysInMonth; i++) {
       dailyExpenses[i] = 0;
       dailyIncomes[i] = 0;
     }
-    
+
     // 일별 지출 합계
     for (var expense in expenses) {
       final day = expense.date.day;
       dailyExpenses[day] = (dailyExpenses[day] ?? 0) + expense.amount;
     }
-    
+
     // 일별 수입 합계
     for (var income in incomes) {
       final day = income.date.day;
       dailyIncomes[day] = (dailyIncomes[day] ?? 0) + income.amount;
     }
-    
+
     // 차트에 표시할 최대 일수 (화면 공간 제약으로 일부만 표시)
-    final displayDays = 15;
+    const displayDays = 15;
     final startDay = max(1, daysInMonth - displayDays + 1);
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               '수입/지출 추이',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
-            Container(
+            const SizedBox(height: 8),
+            SizedBox(
               height: 200,
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(show: false),
+                  gridData: const FlGridData(show: false),
                   titlesData: FlTitlesData(
                     bottomTitles: SideTitles(
                       showTitles: true,
@@ -318,7 +323,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       getTitles: (value) {
                         final day = value.toInt();
-                        return day % 5 == 0 || day == 1 || day == daysInMonth ? '$day일' : '';
+                        return day % 5 == 0 || day == 1 || day == daysInMonth
+                            ? '$day일'
+                            : '';
                       },
                       margin: 8,
                     ),
@@ -331,7 +338,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       getTitles: (value) {
                         if (value == 0) return '0';
-                        
+
                         // 단위 간소화 (예: 100000 -> 10만)
                         if (value >= 10000) {
                           return '${(value / 10000).toStringAsFixed(0)}만';
@@ -340,12 +347,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                       margin: 8,
                     ),
-                    topTitles: SideTitles(showTitles: false),
-                    rightTitles: SideTitles(showTitles: false),
+                    topTitles: const SideTitles(showTitles: false),
+                    rightTitles: const SideTitles(showTitles: false),
                   ),
                   borderData: FlBorderData(
                     show: true,
-                    border: Border.all(color: const Color(0xff37434d), width: 1),
+                    border:
+                        Border.all(color: const Color(0xff37434d), width: 1),
                   ),
                   minX: startDay.toDouble(),
                   maxX: daysInMonth.toDouble(),
@@ -361,7 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       colors: [Colors.red],
                       barWidth: 3,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: false),
+                      dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
                         colors: [Colors.red.withOpacity(0.2)],
@@ -377,7 +385,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       colors: [Colors.green],
                       barWidth: 3,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: false),
+                      dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
                         colors: [Colors.green.withOpacity(0.2)],
@@ -387,12 +395,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildChartLegend(color: Colors.green, label: '수입'),
-                SizedBox(width: 24),
+                const SizedBox(width: 24),
                 _buildChartLegend(color: Colors.red, label: '지출'),
               ],
             ),
@@ -413,28 +421,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             shape: BoxShape.circle,
           ),
         ),
-        SizedBox(width: 4),
+        const SizedBox(width: 4),
         Text(label),
       ],
     );
   }
 
-  Widget _buildCategoryExpenseChart(List<Expense> expenses, List<Category> categories) {
+  Widget _buildCategoryExpenseChart(
+      List<Expense> expenses, List<Category> categories) {
     // 카테고리별 지출 합계 계산
     final Map<String, double> categoryExpenses = {};
     double totalExpense = 0;
-    
+
     for (var expense in expenses) {
-      categoryExpenses[expense.categoryId] = (categoryExpenses[expense.categoryId] ?? 0) + expense.amount;
+      categoryExpenses[expense.categoryId] =
+          (categoryExpenses[expense.categoryId] ?? 0) + expense.amount;
       totalExpense += expense.amount;
     }
-    
+
     // 상위 5개 카테고리만 표시 (나머지는 '기타'로 통합)
     final sortedCategories = categoryExpenses.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     final top5Categories = sortedCategories.take(5).toList();
-    
+
     // 기타 카테고리 계산
     double otherCategoriesTotal = 0;
     if (sortedCategories.length > 5) {
@@ -442,10 +452,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         otherCategoriesTotal += sortedCategories[i].value;
       }
     }
-    
+
     // 파이 차트 데이터 생성
     final List<PieChartSectionData> pieChartData = [];
-    
+
     for (var entry in top5Categories) {
       final category = categories.firstWhere(
         (c) => c.id == entry.key,
@@ -458,23 +468,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           createdAt: DateTime.now(),
         ),
       );
-      
-      final categoryColor = Color(int.parse(category.color.replaceFirst('#', '0xFF')));
-      final percentage = totalExpense > 0 ? (entry.value / totalExpense) * 100 : 0;
-      
+
+      final categoryColor =
+          Color(int.parse(category.color.replaceFirst('#', '0xFF')));
+      final percentage =
+          totalExpense > 0 ? (entry.value / totalExpense) * 100 : 0;
+
       pieChartData.add(PieChartSectionData(
         color: categoryColor,
         value: entry.value,
         title: percentage >= 5 ? '${percentage.toStringAsFixed(1)}%' : '',
         radius: 100,
-        titleStyle: TextStyle(
+        titleStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ));
     }
-    
+
     // 기타 카테고리 추가
     if (otherCategoriesTotal > 0) {
       final percentage = (otherCategoriesTotal / totalExpense) * 100;
@@ -483,32 +495,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         value: otherCategoriesTotal,
         title: percentage >= 5 ? '${percentage.toStringAsFixed(1)}%' : '',
         radius: 100,
-        titleStyle: TextStyle(
+        titleStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
       ));
     }
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               '카테고리별 지출',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             if (totalExpense == 0)
-              Center(
+              const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -522,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: Container(
+                    child: SizedBox(
                       height: 200,
                       child: PieChart(
                         PieChartData(
@@ -535,7 +547,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   Expanded(
                     flex: 2,
-                    child: _buildCategoryLegend(top5Categories, categories, otherCategoriesTotal),
+                    child: _buildCategoryLegend(
+                        top5Categories, categories, otherCategoriesTotal),
                   ),
                 ],
               ),
@@ -566,11 +579,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               createdAt: DateTime.now(),
             ),
           );
-          
-          final categoryColor = Color(int.parse(category.color.replaceFirst('#', '0xFF')));
-          
+
+          final categoryColor =
+              Color(int.parse(category.color.replaceFirst('#', '0xFF')));
+
           return Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
                 Container(
@@ -581,7 +595,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     shape: BoxShape.circle,
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     category.name,
@@ -592,23 +606,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }).toList(),
-        
+
         // 기타 카테고리 범례
         if (otherCategoriesTotal > 0)
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
                 Container(
                   width: 12,
                   height: 12,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.grey,
                     shape: BoxShape.circle,
                   ),
                 ),
-                SizedBox(width: 8),
-                Text('기타'),
+                const SizedBox(width: 8),
+                const Text('기타'),
               ],
             ),
           ),
@@ -616,26 +630,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildRecentTransactions(List<Expense> expenses, List<Category> categories) {
+  Widget _buildRecentTransactions(
+      List<Expense> expenses, List<Category> categories) {
     // 최근 순으로 정렬
     final sortedExpenses = List<Expense>.from(expenses)
       ..sort((a, b) => b.date.compareTo(a.date));
-    
+
     // 최대 5개까지만 표시
     final recentExpenses = sortedExpenses.take(5).toList();
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
+                const Text(
                   '최근 지출',
                   style: TextStyle(
                     fontSize: 18,
@@ -646,16 +661,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ExpenseListScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const ExpenseListScreen()),
                     );
                   },
-                  child: Text('더보기'),
+                  child: const Text('더보기'),
                 ),
               ],
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             if (recentExpenses.isEmpty)
-              Center(
+              const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Text(
@@ -677,9 +693,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     createdAt: DateTime.now(),
                   ),
                 );
-                
-                final categoryColor = Color(int.parse(category.color.replaceFirst('#', '0xFF')));
-                
+
+                final categoryColor =
+                    Color(int.parse(category.color.replaceFirst('#', '0xFF')));
+
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: categoryColor,
@@ -724,9 +741,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       initialDatePickerMode: DatePickerMode.year,
-      locale: Locale('ko', 'KR'),
+      locale: const Locale('ko', 'KR'),
     );
-    
+
     if (picked != null) {
       setState(() {
         _selectedMonth = DateTime(picked.year, picked.month);
@@ -739,18 +756,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       builder: (context) {
         return Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 '추가하기',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -762,7 +779,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => AddExpenseScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const AddExpenseScreen()),
                       );
                     },
                   ),
@@ -775,13 +793,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       // 수입 추가 화면으로 이동 (별도 구현 필요)
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => AddIncomeScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => AddIncomeScreen()),
                       );
                     },
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             ],
           ),
         );
@@ -809,10 +828,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: color,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
