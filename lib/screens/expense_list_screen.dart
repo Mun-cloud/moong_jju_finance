@@ -9,6 +9,7 @@ import '../screens/add_expense_screen.dart';
 import '../screens/expense_detail_screen.dart';
 import '../providers/expense_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/auth_provider.dart';
 
 class ExpenseListScreen extends ConsumerStatefulWidget {
   const ExpenseListScreen({Key? key}) : super(key: key);
@@ -31,14 +32,21 @@ class _ExpenseListScreenState extends ConsumerState<ExpenseListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-    const userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
+    // 현재 로그인한 사용자 가져오기
+    final currentUser = ref.watch(authProvider);
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('로그인이 필요합니다'),
+        ),
+      );
+    }
 
     // 날짜 범위로 필터링된 지출 목록
     final filteredExpenses = ref.watch(dateRangeExpensesProvider((
       start: _startDate,
       end: _endDate,
-      userId: userId,
+      userId: currentUser.id,
     )));
 
     // 카테고리별 추가 필터링

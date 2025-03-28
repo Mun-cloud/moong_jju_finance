@@ -1,13 +1,9 @@
 // lib/screens/statistics_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../models/expense.dart';
-import '../models/income.dart';
-import '../models/category.dart';
-import '../viewmodels/expense_viewmodel.dart';
-import '../viewmodels/income_viewmodel.dart';
-import '../viewmodels/category_viewmodel.dart';
+import 'package:moong_jju_finance/providers/category_provider.dart';
+import 'package:moong_jju_finance/providers/expense_provider.dart';
+import 'package:moong_jju_finance/providers/income_provider.dart';
 import '../widgets/statistics/expense_analysis_tab.dart';
 import '../widgets/statistics/income_analysis_tab.dart';
 import '../widgets/statistics/budget_status_tab.dart';
@@ -19,13 +15,14 @@ class StatisticsScreen extends ConsumerStatefulWidget {
   ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with SingleTickerProviderStateMixin {
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen>
+    with SingleTickerProviderStateMixin {
   // 탭 컨트롤러
   late TabController _tabController;
-  
+
   // 선택된 기간 타입 (월간, 연간)
   String _periodType = '월간';
-  
+
   // 선택된 날짜
   late DateTime _selectedDate;
 
@@ -46,16 +43,18 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
   DateTime get _periodStart {
     if (_periodType == '월간') {
       return DateTime(_selectedDate.year, _selectedDate.month, 1);
-    } else { // 연간
+    } else {
+      // 연간
       return DateTime(_selectedDate.year, 1, 1);
     }
   }
-  
+
   // 선택된 기간의 종료일
   DateTime get _periodEnd {
     if (_periodType == '월간') {
       return DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    } else { // 연간
+    } else {
+      // 연간
       return DateTime(_selectedDate.year, 12, 31);
     }
   }
@@ -69,19 +68,20 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
         lastDate: DateTime(2030),
         initialDatePickerMode: DatePickerMode.year,
       );
-      
+
       if (picked != null) {
         setState(() {
           _selectedDate = DateTime(picked.year, picked.month);
         });
       }
-    } else { // 연간
+    } else {
+      // 연간
       showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text('년도 선택'),
-            content: Container(
+            title: const Text('년도 선택'),
+            content: SizedBox(
               width: 300,
               height: 300,
               child: YearPicker(
@@ -105,31 +105,31 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
   @override
   Widget build(BuildContext context) {
     // 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-    final userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
-    
+    const userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
+
     // 선택된 기간의 지출 목록 가져오기
     final periodExpenses = ref.watch(dateRangeExpensesProvider((
       start: _periodStart,
       end: _periodEnd,
       userId: userId,
     )));
-    
+
     // 선택된 기간의 수입 목록 가져오기
     final periodIncomes = ref.watch(dateRangeIncomesProvider((
       start: _periodStart,
       end: _periodEnd,
       userId: userId,
     )));
-    
+
     // 카테고리 정보 가져오기
-    final categoriesState = ref.watch(categoryProvider);
-    
+    final categoriesState = ref.watch(categoryNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('통계'),
+        title: const Text('통계'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
+          tabs: const [
             Tab(text: '지출 분석'),
             Tab(text: '수입 분석'),
             Tab(text: '예산 현황'),
@@ -139,8 +139,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
           // 기간 타입 선택 드롭다운
           DropdownButton<String>(
             value: _periodType,
-            icon: Icon(Icons.arrow_drop_down, color: Colors.white),
-            style: TextStyle(color: Colors.white),
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+            style: const TextStyle(color: Colors.white),
             dropdownColor: Theme.of(context).primaryColor,
             underline: Container(),
             onChanged: (String? newValue) {
@@ -158,7 +158,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
               );
             }).toList(),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: categoriesState.when(
@@ -179,7 +179,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month - 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year - 1,
                         _selectedDate.month,
@@ -194,7 +195,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month + 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year + 1,
                         _selectedDate.month,
@@ -204,7 +206,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                 },
                 onSelectPeriod: () => _selectPeriod(context),
               ),
-              
+
               // 수입 분석 탭
               IncomeAnalysisTab(
                 incomes: periodIncomes,
@@ -217,7 +219,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month - 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year - 1,
                         _selectedDate.month,
@@ -232,7 +235,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month + 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year + 1,
                         _selectedDate.month,
@@ -242,7 +246,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                 },
                 onSelectPeriod: () => _selectPeriod(context),
               ),
-              
+
               // 예산 현황 탭
               BudgetStatusTab(
                 expenses: periodExpenses,
@@ -256,7 +260,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month - 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year - 1,
                         _selectedDate.month,
@@ -271,7 +276,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
                         _selectedDate.year,
                         _selectedDate.month + 1,
                       );
-                    } else { // 연간
+                    } else {
+                      // 연간
                       _selectedDate = DateTime(
                         _selectedDate.year + 1,
                         _selectedDate.month,
@@ -284,7 +290,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> with Single
             ],
           );
         },
-        loading: () => Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text('데이터를 불러오는 중 오류가 발생했습니다: $error'),
         ),

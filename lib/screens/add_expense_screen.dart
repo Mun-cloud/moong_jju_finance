@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
-import '../screens/edit_expense_screen.dart';
 import '../providers/expense_provider.dart';
 import '../providers/category_provider.dart';
+import '../providers/auth_provider.dart';
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
   const AddExpenseScreen({Key? key}) : super(key: key);
@@ -248,6 +248,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           _isSubmitting = true;
         });
 
+        // 현재 로그인한 사용자 가져오기
+        final currentUser = ref.read(authProvider);
+        if (currentUser == null) {
+          throw Exception('로그인이 필요합니다');
+        }
+
         // 새 지출 생성
         final newExpense = Expense(
           id: DateTime.now().millisecondsSinceEpoch.toString(), // 임시 ID
@@ -255,7 +261,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           description: _descriptionController.text.trim(),
           date: _selectedDate,
           categoryId: _selectedCategoryId!,
-          userId: "51be03ed-22aa-4ea9-9064-328252867430", // 임시 사용자 ID
+          userId: currentUser.id, // 현재 로그인한 사용자의 ID 사용
           createdAt: DateTime.now(),
         );
 

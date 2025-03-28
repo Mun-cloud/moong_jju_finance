@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod/riverpod.dart' as riverpod;
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/splash_screen.dart';
+
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/add_transaction_screen.dart';
-import 'screens/transaction_detail_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/analytics_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/statistics_screen.dart';
+import 'screens/expense_detail_screen.dart';
+import 'screens/expense_list_screen.dart';
+import 'screens/add_expense_screen.dart';
+import 'screens/edit_expense_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,33 +43,39 @@ final _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/auth',
       builder: (context, state) => const AuthScreen(),
     ),
     GoRoute(
       path: '/home',
       builder: (context, state) => const HomeScreen(),
     ),
-    // GoRoute(
-    //   path: '/add-transaction',
-    //   builder: (context, state) => const AddTransactionScreen(),
-    // ),
     GoRoute(
-      path: '/transaction/:id',
-      builder: (context, state) => TransactionDetailScreen(
-        id: state.pathParameters['id']!,
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/statistics',
+      builder: (context, state) => const StatisticsScreen(),
+    ),
+    GoRoute(
+      path: '/expenses',
+      builder: (context, state) => const ExpenseListScreen(),
+    ),
+    GoRoute(
+      path: '/expenses/add',
+      builder: (context, state) => const AddExpenseScreen(),
+    ),
+    GoRoute(
+      path: '/expenses/:id',
+      builder: (context, state) => ExpenseDetailScreen(
+        expenseId: state.pathParameters['id']!,
       ),
     ),
     GoRoute(
-      path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
-    ),
-    GoRoute(
-      path: '/analytics',
-      builder: (context, state) => const AnalyticsScreen(),
+      path: '/expenses/:id/edit',
+      builder: (context, state) => EditExpenseScreen(
+        expenseId: state.pathParameters['id']!,
+      ),
     ),
   ],
 );

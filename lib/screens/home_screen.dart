@@ -8,6 +8,10 @@ import '../models/income.dart';
 import '../models/category.dart';
 import '../screens/expense_list_screen.dart';
 import '../screens/add_expense_screen.dart';
+import '../providers/expense_provider.dart';
+import '../providers/income_provider.dart';
+import '../providers/category_provider.dart';
+import '../providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -46,25 +50,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-    const userId = "51be03ed-22aa-4ea9-9064-328252867430"; // 임시 사용자 ID
+    // 현재 로그인한 사용자 가져오기
+    final currentUser = ref.watch(authProvider);
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('로그인이 필요합니다'),
+        ),
+      );
+    }
 
     // 현재 월의 지출 목록 가져오기
     final currentMonthExpenses = ref.watch(dateRangeExpensesProvider((
       start: _monthStart,
       end: _monthEnd,
-      userId: userId,
+      userId: currentUser.id,
     )));
 
     // 현재 월의 수입 목록 가져오기
     final currentMonthIncomes = ref.watch(dateRangeIncomesProvider((
       start: _monthStart,
       end: _monthEnd,
-      userId: userId,
+      userId: currentUser.id,
     )));
 
     // 카테고리 정보 가져오기
-    final categoriesState = ref.watch(categoryProvider);
+    final categoriesState = ref.watch(categoryNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -314,41 +325,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 LineChartData(
                   gridData: const FlGridData(show: false),
                   titlesData: FlTitlesData(
-                    bottomTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      getTextStyles: (context, value) => const TextStyle(
-                        color: Color(0xff68737d),
-                        fontSize: 12,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 22,
+                        getTitlesWidget: (value, meta) {
+                          final day = value.toInt();
+                          return day % 5 == 0 || day == 1 || day == daysInMonth
+                              ? Text(
+                                  '$day일',
+                                  style: const TextStyle(
+                                    color: Color(0xff68737d),
+                                    fontSize: 12,
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        },
                       ),
-                      getTitles: (value) {
-                        final day = value.toInt();
-                        return day % 5 == 0 || day == 1 || day == daysInMonth
-                            ? '$day일'
-                            : '';
-                      },
-                      margin: 8,
                     ),
-                    leftTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTextStyles: (context, value) => const TextStyle(
-                        color: Color(0xff68737d),
-                        fontSize: 12,
-                      ),
-                      getTitles: (value) {
-                        if (value == 0) return '0';
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const Text('0');
 
-                        // 단위 간소화 (예: 100000 -> 10만)
-                        if (value >= 10000) {
-                          return '${(value / 10000).toStringAsFixed(0)}만';
-                        }
-                        return value.toInt().toString();
-                      },
-                      margin: 8,
+                          // 단위 간소화 (예: 100000 -> 10만)
+                          if (value >= 10000) {
+                            return Text(
+                              '${(value / 10000).toStringAsFixed(0)}만',
+                              style: const TextStyle(
+                                color: Color(0xff68737d),
+                                fontSize: 12,
+                              ),
+                            );
+                          }
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                              color: Color(0xff68737d),
+                              fontSize: 12,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    topTitles: const SideTitles(showTitles: false),
-                    rightTitles: const SideTitles(showTitles: false),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(
                     show: true,
@@ -366,13 +393,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           FlSpot(i.toDouble(), dailyExpenses[i] ?? 0),
                       ],
                       isCurved: true,
-                      colors: [Colors.red],
+                      color: Colors.red,
                       barWidth: 3,
                       isStrokeCapRound: true,
                       dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        colors: [Colors.red.withOpacity(0.2)],
+                        color: Colors.red.withOpacity(0.2),
                       ),
                     ),
                     // 수입 선
@@ -382,13 +409,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           FlSpot(i.toDouble(), dailyIncomes[i] ?? 0),
                       ],
                       isCurved: true,
-                      colors: [Colors.green],
+                      color: Colors.green,
                       barWidth: 3,
                       isStrokeCapRound: true,
                       dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        colors: [Colors.green.withOpacity(0.2)],
+                        color: Colors.green.withOpacity(0.2),
                       ),
                     ),
                   ],
@@ -790,11 +817,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(context);
-                      // 수입 추가 화면으로 이동 (별도 구현 필요)
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => AddIncomeScreen()),
+                      // 수입 추가 화면은 아직 구현되지 않음
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('수입 추가 기능은 아직 구현되지 않았습니다'),
+                        ),
                       );
                     },
                   ),

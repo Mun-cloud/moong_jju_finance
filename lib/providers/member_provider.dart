@@ -1,10 +1,12 @@
 // providers/member_provider.dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
-import '../models/member.dart';
+
 import 'dart:io';
 
 // Supabase 클라이언트 프로바이더 (main.dart에서 정의된 클라이언트를 사용)
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moong_jju_finance/models/member.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
 final supabaseClientProvider = Provider<supabase.SupabaseClient>((ref) {
   return supabase.Supabase.instance.client;
 });
@@ -119,14 +121,21 @@ class MemberNotifier extends StateNotifier<AsyncValue<List<Member>>> {
   }
 
   // 사용자 프로필 이미지 업데이트
-  Future<void> updateProfileImage(String memberId, String imagePath) async {
+  Future<void> updateProfileImage(
+      String memberId, String imagePath, File file) async {
     try {
       // 파일명 생성 (고유한 이름 생성)
       final fileName = 'profile_$memberId.jpg';
-      final file = File(imagePath);
 
       // Storage에 이미지 업로드
-      await _supabaseClient.storage.from('profiles').upload(fileName, file);
+      await _supabaseClient.storage.from('profiles').upload(
+            fileName,
+            file,
+            fileOptions: const supabase.FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
 
       // 이미지 URL 가져오기
       final imageUrl =

@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class IncomeSourceChart extends StatelessWidget {
   final List<MapEntry<String, double>> sortedSources;
   final double totalIncome;
-  
+
   // 통화 포맷터
   final currencyFormatter = NumberFormat.currency(
     locale: 'ko_KR',
@@ -26,20 +26,20 @@ class IncomeSourceChart extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               '수입원별 금액',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             if (totalIncome == 0)
-              Center(
+              const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Text(
@@ -49,12 +49,14 @@ class IncomeSourceChart extends StatelessWidget {
                 ),
               )
             else
-              Container(
+              SizedBox(
                 height: 200,
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: sortedSources.isEmpty ? 0 : sortedSources.first.value * 1.2,
+                    maxY: sortedSources.isEmpty
+                        ? 0
+                        : sortedSources.first.value * 1.2,
                     barTouchData: BarTouchData(
                       enabled: true,
                       touchTooltipData: BarTouchTooltipData(
@@ -62,11 +64,12 @@ class IncomeSourceChart extends StatelessWidget {
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
                             '${sortedSources[groupIndex].key}\n',
-                            TextStyle(color: Colors.white),
+                            const TextStyle(color: Colors.white),
                             children: <TextSpan>[
                               TextSpan(
-                                text: currencyFormatter.format(sortedSources[groupIndex].value),
-                                style: TextStyle(
+                                text: currencyFormatter
+                                    .format(sortedSources[groupIndex].value),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -78,49 +81,74 @@ class IncomeSourceChart extends StatelessWidget {
                     ),
                     titlesData: FlTitlesData(
                       show: true,
-                      bottomTitles: SideTitles(
-                        showTitles: true,
-                        getTextStyles: (context, value) => TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                        ),
-                        margin: 10,
-                        getTitles: (double value) {
-                          int index = value.toInt();
-                          if (index >= 0 && index < sortedSources.length) {
-                            String source = sortedSources[index].key;
-                            // 긴 이름은 줄임
-                            if (source.length > 5) {
-                              return source.substring(0, 5) + '...';
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            int index = value.toInt();
+                            if (index >= 0 && index < sortedSources.length) {
+                              String source = sortedSources[index].key;
+                              if (source.length > 5) {
+                                return Text(
+                                  '${source.substring(0, 5)}...',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              }
+                              return Text(
+                                source,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                ),
+                              );
                             }
-                            return source;
-                          }
-                          return '';
-                        },
-                      ),
-                      leftTitles: SideTitles(
-                        showTitles: true,
-                        getTextStyles: (context, value) => TextStyle(
-                          color: Colors.black,
-                          fontSize: 10,
+                            return const Text('');
+                          },
                         ),
-                        margin: 10,
-                        reservedSize: 30,
-                        getTitles: (value) {
-                          if (value == 0) return '0';
-                          // 단위 간소화 (예: 100000 -> 10만)
-                          if (value >= 10000) {
-                            return '${(value / 10000).toStringAsFixed(0)}만';
-                          }
-                          return value.toInt().toString();
-                        },
                       ),
-                      topTitles: SideTitles(showTitles: false),
-                      rightTitles: SideTitles(showTitles: false),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            if (value == 0) return const Text('0');
+                            if (value >= 10000) {
+                              return Text(
+                                '${(value / 10000).toStringAsFixed(0)}만',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                              );
+                            }
+                            return Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 10,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     gridData: FlGridData(
                       show: true,
-                      checkToShowHorizontalLine: (value) => value % (sortedSources.isEmpty ? 1 : sortedSources.first.value / 5) == 0,
+                      checkToShowHorizontalLine: (value) =>
+                          value %
+                              (sortedSources.isEmpty
+                                  ? 1
+                                  : sortedSources.first.value / 5) ==
+                          0,
                       getDrawingHorizontalLine: (value) {
                         return FlLine(
                           color: Colors.grey.withOpacity(0.3),
@@ -128,19 +156,17 @@ class IncomeSourceChart extends StatelessWidget {
                         );
                       },
                     ),
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
+                    borderData: FlBorderData(show: false),
                     barGroups: List.generate(
                       sortedSources.length,
                       (index) => BarChartGroupData(
                         x: index,
                         barRods: [
                           BarChartRodData(
-                            y: sortedSources[index].value,
-                            colors: [Colors.green],
+                            toY: sortedSources[index].value,
+                            color: Colors.green,
                             width: 22,
-                            borderRadius: BorderRadius.only(
+                            borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(6),
                               topRight: Radius.circular(6),
                             ),
